@@ -8,14 +8,17 @@
 ### ✅ Completed — nothing left to do on these
 | Step | Status |
 |------|--------|
-| GitHub — code pushed (2 commits) | ✅ Done |
+| GitHub — code pushed | ✅ Done |
 | Supabase — `GEMINI_API_KEY` secret set | ✅ Done |
 | Supabase — `oracle-analyze` Edge Function deployed (Gemini 2.5 Flash direct) | ✅ Done |
 | Oracle AI — live-tested, Gemini API responding | ✅ Done |
 | Maps API key — moved to `VITE_GOOGLE_MAPS_API_KEY` env var | ✅ Done |
+| PWA manifest + meta tags — implemented in `public/manifest.json` + `index.html` | ✅ Done |
+| Vercel `outputDirectory` build fix — `npx vite build --outDir dist` | ✅ Done |
 
-### ⏳ One step remaining — Vercel (you do this in the browser, takes ~5 min)
-See **Section 6** below for exact instructions with your real values pre-filled.
+### ⏳ Remaining manual steps (browser only)
+1. **Vercel** — import repo, add 3 env vars, deploy (Section 6)
+2. **Google Maps API restriction** — restrict to Maps JavaScript API only (Section 6.6 — HTTP referrers not available on this key type, use API restrictions instead)
 
 ---
 
@@ -185,10 +188,11 @@ SUPABASE_ACCESS_TOKEN=<your-sbp-token> \
 |---------|-------|
 | Framework Preset | **Vite** |
 | Root Directory | `.` |
-| Build Command | `npm run build` |
+| Build Command | `npx vite build --outDir dist` |
 | Output Directory | `dist` |
 | Install Command | `npm install` |
 
+> ⚠️ If Vercel auto-fills `npm run build`, **override it** with `npx vite build --outDir dist`. The project's `npm run build` is a platform script that outputs to a different path — using Vite directly ensures the `dist/` folder is created where Vercel expects it.
 > The `vercel.json` already in the repo handles SPA rewrites, security headers, and asset caching.
 
 ### 6.3 Add environment variables — copy these exactly
@@ -218,78 +222,64 @@ Click **"Deploy"**. The build takes ~60–90 seconds. When it finishes:
 2. Set **Site URL** to your Vercel URL (e.g. `https://aegiscsg.vercel.app`)
 3. Add to **Redirect URLs**: `https://aegiscsg.vercel.app/**`
 
-### 6.6 Post-deploy: restrict the Google Maps API key (recommended)
+### 6.6 Post-deploy: restrict the Google Maps API key
+
+> ℹ️ **Note**: "HTTP referrers" restriction requires a billing-enabled Google Cloud project. If you only see **None** and **IP Addresses** under Application restrictions, use **API restrictions** instead — this limits the key to only the Maps JavaScript API service, which is equally effective security.
+
+**Use API restrictions (works on all key types):**
 
 1. Go to: https://console.cloud.google.com/apis/credentials
-2. Find the key `AIzaSyBDv4vLVRRPy9-zNjOOOdPGjEatcpuhWYs`
-3. Under **Application restrictions** → select **HTTP referrers**
-4. Add: `https://aegiscsg.vercel.app/*`
-5. Save
+2. Click on the key `AIzaSyBDv4vLVRRPy9-zNjOOOdPGjEatcpuhWYs`
+3. Scroll to **"API restrictions"** section (below Application restrictions)
+4. Select **"Restrict key"**
+5. In the dropdown, tick **"Maps JavaScript API"**
+6. Click **Save**
+
+This ensures the key can only be used for Maps — even if someone finds it, they cannot use it for other Google APIs (Geocoding, Places, etc.) and cannot run up charges beyond Maps usage.
+
+**To also add HTTP referrer restriction (requires billing account):**
+1. Enable billing at: https://console.cloud.google.com/billing
+2. Return to the key → Application restrictions → **HTTP referrers (web sites)**
+3. Add: `https://aegiscsg.vercel.app/*`
+4. Save
 
 ---
 
-## 7. Step 5 — Mobile Deployment (PWA)
+## 7. Step 5 — Mobile Deployment (PWA) ✅ IMPLEMENTED
 
-AEGIS CSG is a **Progressive Web App (PWA)**. Users on mobile get a native-app-like experience without any app store.
+> The PWA manifest and all required meta tags are already live in the codebase — deployed automatically with the Vercel build. No extra steps needed.
 
-### 7.1 What users get on mobile
+### What's already in the app
 
-- Full-screen experience (no browser UI)
-- Works offline with cached data
-- Push notification ready (requires additional setup)
-- Add to Home Screen prompt on iOS Safari and Android Chrome
+| File | What it does |
+|------|-------------|
+| `public/manifest.json` | App name, icons, theme colour, standalone display mode |
+| `index.html` `<head>` | Manifest link, Apple mobile web app meta tags, OG tags, theme-color |
 
-### 7.2 Enable PWA (add manifest + service worker)
+### What users get on mobile after Vercel deploys
 
-Add these two files to the project:
+- **Full-screen** experience — no browser address bar
+- **Add to Home Screen** — appears like a native app icon
+- **Theme colour** — red (#ef4444) status bar on Android
 
-**`public/manifest.json`:**
-```json
-{
-  "name": "AEGIS CSG",
-  "short_name": "AEGIS",
-  "description": "Community Safety Guardian — Emergency Response System",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#0d1628",
-  "theme_color": "#ef4444",
-  "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
-}
-```
-
-**`index.html` — add inside `<head>`:**
-```html
-<link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#ef4444" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-```
-
-### 7.3 How to install on mobile
+### How to install on mobile
 
 **iOS (Safari):**
-1. Open `https://aegiscsg.vercel.app` in Safari
+1. Open your Vercel URL in Safari
 2. Tap the **Share** button (bottom toolbar)
-3. Select **Add to Home Screen**
-4. Tap **Add**
+3. Select **Add to Home Screen** → tap **Add**
 
 **Android (Chrome):**
-1. Open `https://aegiscsg.vercel.app` in Chrome
-2. Chrome will show "Add to Home screen" banner automatically
-3. Or: tap the 3-dot menu → **Add to Home screen**
+1. Open your Vercel URL in Chrome
+2. Chrome shows an **"Add to Home screen"** banner automatically
+3. Or: tap ⋮ menu → **Add to Home screen**
 
-### 7.4 Native app packaging (optional — React Native / Capacitor)
+### Optional: native app packaging (Capacitor — for App Store / Play Store)
 
-For full native distribution on App Store / Play Store:
-
-**Using Capacitor:**
 ```bash
 npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/ios
 npx cap init "AEGIS CSG" com.aegis.csg
-npm run build
+npx vite build --outDir dist
 npx cap add android
 npx cap add ios
 npx cap sync
