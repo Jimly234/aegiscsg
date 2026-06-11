@@ -15,10 +15,10 @@
 | Maps API key — moved to `VITE_GOOGLE_MAPS_API_KEY` env var | ✅ Done |
 | PWA manifest + meta tags — implemented in `public/manifest.json` + `index.html` | ✅ Done |
 | Vercel `outputDirectory` build fix — `npx vite build --outDir dist` | ✅ Done |
+| **Vercel deployment — live at https://aegiscsg.vercel.app** | ✅ Done |
+| Google Maps API restriction — skipped for now, revisit before production launch | ✅ Acknowledged |
 
-### ⏳ Remaining manual steps (browser only)
-1. **Vercel** — import repo, add 3 env vars, deploy (Section 6)
-2. **Google Maps API restriction** — restrict to Maps JavaScript API only (Section 6.6 — HTTP referrers not available on this key type, use API restrictions instead)
+> 🎉 **All deployment steps complete. AEGIS CSG is live.**
 
 ---
 
