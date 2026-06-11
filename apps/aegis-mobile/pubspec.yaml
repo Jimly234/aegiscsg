@@ -1,0 +1,46 @@
+name: aegis_sentinel
+description: Aegis CSG Sentinel Mobile Application
+
+publish_to: 'none'
+
+version: 2.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  http: ^1.2.0
+  socket_io_client: ^2.0.0
+  shared_preferences: ^2.2.0
+  flutter_bloc: ^8.1.0
+  equatable: ^2.0.0
+  geolocator: ^10.1.0
+  flutter_local_notifications: ^16.0.0
+  permission_handler: ^11.0.0
+  background_fetch: ^1.2.0
+  audio_waveforms: ^1.0.0
+  flutter_contacts: ^1.1.0
+  share_plus: ^7.2.0
+  url_launcher: ^6.2.0
+  flutter_tts: ^3.8.0
+  speech_to_text: ^6.5.0
+  vibration: ^1.8.0
+  torch_light: ^1.0.0
+  sensors_plus: ^4.0.0
+  connectivity_plus: ^5.0.0
+  battery_plus: ^5.0.0
+  device_info_plus: ^9.0.0
+  package_info_plus: ^5.0.0
+  crypto: ^3.0.0
+  encrypt: ^5.0.0
+  pointycastle: ^3.7.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icons/
+    - assets/sounds/
+    - assets/images/

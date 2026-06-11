@@ -1,0 +1,173 @@
+# Pillar Ledger - Hyperledger Fabric Network Configuration
+# Document Control: Version 2.0, Production Build
+
+---
+Organizations:
+  - &OrdererOrg
+    Name: OrdererOrg
+    ID: OrdererMSP
+    MSPDir: crypto-config/ordererOrganizations/aegis.ng/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('OrdererMSP.admin')"
+
+  - &AegisOrg
+    Name: AegisOrg
+    ID: AegisMSP
+    MSPDir: crypto-config/peerOrganizations/aegis.ng/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('AegisMSP.admin', 'AegisMSP.peer', 'AegisMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('AegisMSP.admin', 'AegisMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('AegisMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('AegisMSP.peer')"
+    AnchorPeers:
+      - Host: peer0.aegis.ng
+        Port: 7051
+
+  - &NITDAOrg
+    Name: NITDAOrg
+    ID: NITDAMSP
+    MSPDir: crypto-config/peerOrganizations/nitda.gov.ng/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('NITDAMSP.admin', 'NITDAMSP.peer', 'NITDAMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('NITDAMSP.admin', 'NITDAMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('NITDAMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('NITDAMSP.peer')"
+    AnchorPeers:
+      - Host: peer0.nitda.gov.ng
+        Port: 7051
+
+  - &CSOOrg
+    Name: CSOOrg
+    ID: CSOMSP
+    MSPDir: crypto-config/peerOrganizations/cso.ng/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('CSOMSP.admin', 'CSOMSP.peer', 'CSOMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('CSOMSP.admin', 'CSOMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('CSOMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('CSOMSP.peer')"
+    AnchorPeers:
+      - Host: peer0.cso.ng
+        Port: 7051
+
+Capabilities:
+  Channel: &ChannelCapabilities
+    V2_0: true
+  Orderer: &OrdererCapabilities
+    V2_0: true
+  Application: &ApplicationCapabilities
+    V2_0: true
+
+Application: &ApplicationDefaults
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    LifecycleEndorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+  Capabilities:
+    <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+  OrdererType: etcdraft
+  Addresses:
+    - orderer.aegis.ng:7050
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    <<: *ChannelCapabilities
+
+Profiles:
+  AegisOrdererGenesis:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
+    Consortiums:
+      AegisConsortium:
+        Organizations:
+          - *AegisOrg
+          - *NITDAOrg
+          - *CSOOrg
+
+  AegisChannel:
+    <<: *ChannelDefaults
+    Consortium: AegisConsortium
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *AegisOrg
+        - *NITDAOrg
+        - *CSOOrg

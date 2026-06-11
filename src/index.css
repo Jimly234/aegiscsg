@@ -1,0 +1,162 @@
+/* stylelint-disable */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   AEGIS CSG Design System — Tactical Utilitarianism
+   Dark night-ops theme: deep navy base (#0a0e1a), Safety Amber
+   primary, Critical Crimson alerts, Emerald safe-status.
+   All colors MUST be HSL.
+   ============================================================ */
+
+@layer base {
+  :root {
+    --radius: 0.25rem;
+
+    /* Surfaces */
+    --background:           224 42% 6%;
+    --foreground:           210 40% 92%;
+    --card:                 224 38% 9%;
+    --card-foreground:      210 40% 92%;
+    --popover:              224 34% 11%;
+    --popover-foreground:   210 40% 92%;
+
+    /* Primary — Safety Amber */
+    --primary:              43 100% 50%;
+    --primary-foreground:   224 42% 6%;
+
+    /* Secondary — mid-panel */
+    --secondary:            224 32% 15%;
+    --secondary-foreground: 210 40% 80%;
+
+    /* Muted */
+    --muted:                224 28% 13%;
+    --muted-foreground:     215 18% 50%;
+
+    /* Accent */
+    --accent:               224 28% 18%;
+    --accent-foreground:    210 40% 90%;
+
+    /* Destructive — Critical Crimson */
+    --destructive:          0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Border / Input */
+    --border:               224 22% 18%;
+    --input:                224 22% 18%;
+    --ring:                 43 100% 50%;
+
+    /* Charts */
+    --chart-1:  0 72% 51%;
+    --chart-2:  43 100% 50%;
+    --chart-3:  152 60% 42%;
+    --chart-4:  211 86% 57%;
+    --chart-5:  280 65% 60%;
+
+    /* Sidebar */
+    --sidebar-background:           224 42% 6%;
+    --sidebar-foreground:           210 38% 75%;
+    --sidebar-primary:              43 100% 50%;
+    --sidebar-primary-foreground:   224 42% 6%;
+    --sidebar-accent:               224 32% 13%;
+    --sidebar-accent-foreground:    210 40% 90%;
+    --sidebar-border:               224 22% 14%;
+    --sidebar-ring:                 43 100% 50%;
+  }
+
+  /* Dark mode mirrors :root — AEGIS is dark-first */
+  .dark {
+    --background:           224 42% 6%;
+    --foreground:           210 40% 92%;
+    --card:                 224 38% 9%;
+    --card-foreground:      210 40% 92%;
+    --popover:              224 34% 11%;
+    --popover-foreground:   210 40% 92%;
+    --primary:              43 100% 50%;
+    --primary-foreground:   224 42% 6%;
+    --secondary:            224 32% 15%;
+    --secondary-foreground: 210 40% 80%;
+    --muted:                224 28% 13%;
+    --muted-foreground:     215 18% 50%;
+    --accent:               224 28% 18%;
+    --accent-foreground:    210 40% 90%;
+    --destructive:          0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border:               224 22% 18%;
+    --input:                224 22% 18%;
+    --ring:                 43 100% 50%;
+    --chart-1:  0 72% 51%;
+    --chart-2:  43 100% 50%;
+    --chart-3:  152 60% 42%;
+    --chart-4:  211 86% 57%;
+    --chart-5:  280 65% 60%;
+    --sidebar-background:           224 42% 6%;
+    --sidebar-foreground:           210 38% 75%;
+    --sidebar-primary:              43 100% 50%;
+    --sidebar-primary-foreground:   224 42% 6%;
+    --sidebar-accent:               224 32% 13%;
+    --sidebar-accent-foreground:    210 40% 90%;
+    --sidebar-border:               224 22% 14%;
+    --sidebar-ring:                 43 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  *::-webkit-scrollbar        { width: 6px; background: transparent; }
+  *::-webkit-scrollbar-thumb  { background: hsl(var(--border)); border-radius: 3px; }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* ── AEGIS Utility Classes ─────────────────────────────────── */
+@layer utilities {
+  /* Amber glow for critical-action elements */
+  .glow-amber {
+    box-shadow: 0 0 12px 2px hsl(43 100% 50% / 0.35);
+  }
+  /* Red pulse ring for active alerts */
+  .glow-red {
+    box-shadow: 0 0 14px 3px hsl(0 72% 51% / 0.40);
+  }
+  /* Emerald glow for safe/online status */
+  .glow-green {
+    box-shadow: 0 0 10px 2px hsl(152 60% 42% / 0.35);
+  }
+  /* Monospace readout text */
+  .font-mono-data {
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    letter-spacing: 0.04em;
+  }
+  /* Status dot base */
+  .status-dot {
+    @apply inline-block w-2 h-2 rounded-full shrink-0;
+  }
+  .status-dot-red      { @apply status-dot bg-destructive; animation: pulse-red 1.4s ease-in-out infinite; }
+  .status-dot-amber    { @apply status-dot; background: hsl(43 100% 50%); animation: pulse-amber 2s ease-in-out infinite; }
+  .status-dot-green    { @apply status-dot; background: hsl(152 60% 42%); }
+  .status-dot-muted    { @apply status-dot bg-muted-foreground; }
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+@keyframes pulse-amber {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+@keyframes stream-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+.stream-active { animation: stream-pulse 1.5s ease-in-out infinite; }
