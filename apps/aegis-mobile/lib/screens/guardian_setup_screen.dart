@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../services/auth_service.dart';
 
 class GuardianSetupScreen extends StatefulWidget {
@@ -17,7 +19,16 @@ class _GuardianSetupScreenState extends State<GuardianSetupScreen> {
   final List<Map<String, String>> _guardiansList = [];
 
   @override
-  void initState() { super.initState(); _apiClient.loadStoredCredentials(); }
+  void initState() { super.initState(); _apiClient.loadStoredCredentials(); _loadGuardians(); }
+  Future<void> _loadGuardians() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString('guardians');
+    if (data != null) { final list = jsonDecode(data) as List; setState(() { _guardiansList.addAll(list.cast<Map<String, String>>()); }); }
+  }
+  Future<void> _saveGuardians() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('guardians', jsonEncode(_guardiansList));
+  }
 
   Future<void> _addGuardian() async {
     if (_phoneController.text.isEmpty || _nameController.text.isEmpty) return;
@@ -28,7 +39,7 @@ class _GuardianSetupScreenState extends State<GuardianSetupScreen> {
     final phone = _phoneController.text;
     _guardiansList.add({'name': name, 'phone': phone});
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Guardian $name added'), backgroundColor: const Color(0xFF0A6847)));
-    setState(() {});
+    setState(() {}); _saveGuardians();
       _nameController.clear(); _phoneController.clear();
       setState(() => _isAdding = false);
     }

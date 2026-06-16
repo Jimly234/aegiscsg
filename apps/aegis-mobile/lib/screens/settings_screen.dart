@@ -6,7 +6,7 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _logout(BuildContext context) async {
     final confirmed = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(backgroundColor: const Color(0xFF1a1a2e), title: const Text('Logout', style: TextStyle(color: Colors.white)), content: const Text('Are you sure?', style: TextStyle(color: Colors.white70)), actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')), TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Logout', style: TextStyle(color: Colors.red)))]));
-    if (confirmed == true && context.mounted) { await AuthService().clearAuth(); Navigator.of(context).pushReplacementNamed('/login'); }
+    if (confirmed == true && context.mounted) { await AuthService().clearAuth(); await Future.delayed(const Duration(milliseconds: 500)); if (context.mounted) { Navigator.of(context).pushNamedAndRemoveUntil("/login", (route) => false); } }
   }
 
   @override

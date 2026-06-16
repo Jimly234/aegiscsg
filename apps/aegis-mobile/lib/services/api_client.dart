@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ApiClient {
-  static const String _baseUrl = 'http://10.0.2.2:8000/api/v1';
+  static const String _baseUrl = 'https://aegiscsg.onrender.com/api/v1';
   final AuthService _authService = AuthService();
   String? _deviceToken;
   String? _apiKey;
