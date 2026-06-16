@@ -122,7 +122,7 @@ class ApiClient {
   Future<Map<String, dynamic>?> assessRisk({required double latitude, required double longitude}) async {
     try {
       final response = await http.post(Uri.parse('$_baseUrl/oracle/risk/assess'), headers: _headers,
-        body: jsonEncode({'location': {'latitude': latitude, 'longitude': longitude}}));
+        body: jsonEncode({'lat': latitude, 'lng': longitude}));
       if (response.statusCode == 200) return jsonDecode(response.body);
       return null;
     } catch (e) { 
