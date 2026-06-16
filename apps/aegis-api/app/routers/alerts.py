@@ -3,6 +3,19 @@ from typing import List, Optional
 from datetime import datetime
 import uuid
 
+from pydantic import BaseModel
+from typing import Optional as Opt
+
+class FlutterAlertCreate(BaseModel):
+    device_id: str
+    location: dict
+    timestamp: str = ""
+    battery_level: Opt[int] = None
+    network_type: Opt[str] = None
+    signal_strength: Opt[int] = None
+    trigger_method: str = "button_hold"
+    is_silent: bool = True
+
 from app.models.schemas import (
     AlertCreate, AlertResponse, AlertStatus, AlertPriority,
     GeoLocation, AIAnalysis, LogEntry
@@ -14,7 +27,36 @@ router = APIRouter()
 alerts_db: dict[str, AlertResponse] = {}
 
 @router.post("/", response_model=AlertResponse)
-async def create_alert(alert: AlertCreate):
+async def create_alert(alert: FlutterAlertCreate):
+    # Convert Flutter format to our format
+    loc = alert.location
+    geo = GeoLocation(
+        lat=loc.get('latitude', 0),
+        lng=loc.get('longitude', 0),
+        accuracy=loc.get('accuracy')
+    )
+    alert_id = f"ALT-{uuid.uuid4().hex[:4].upper()}"
+    new_alert = AlertResponse(
+        id=alert_id,
+        victim_name=f"Device {alert.device_id[:8]}",
+        location=geo,
+        status=AlertStatus.ACTIVE,
+        priority=AlertPriority.CRITICAL,
+        timestamp=datetime.utcnow(),
+        battery_level=alert.battery_level,
+        signal_strength=alert.signal_strength,
+        guardians_notified=3,
+        guardians_acknowledged=0,
+        audio_streaming=False,
+        log_entries=[
+            LogEntry(id=f"L{uuid.uuid4().hex[:4]}", timestamp=datetime.utcnow().isoformat(), message="Alert received from Sentinel device", author="System", type="system")
+        ]
+    )
+    alerts_db[alert_id] = new_alert
+    return new_alert
+
+@router.post("/create", response_model=AlertResponse)
+async def create_alert_v1(alert: AlertCreate):
     alert_id = f"ALT-{uuid.uuid4().hex[:4].upper()}"
     new_alert = AlertResponse(
         id=alert_id,

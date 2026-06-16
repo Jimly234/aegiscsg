@@ -3,10 +3,29 @@ from datetime import datetime, timedelta
 import uuid
 
 from app.models.schemas import UserCreate, UserResponse, Token
+from pydantic import BaseModel
 
 router = APIRouter()
 
 users_db: dict[str, UserResponse] = {}
+device_db: dict[str, dict] = {}
+
+class DeviceRegister(BaseModel):
+    device_id: str
+    platform: str = "android"
+    platform_version: str = "unknown"
+    app_version: str = "2.0.0"
+    device_model: str = "unknown"
+
+@router.post("/device/register")
+async def register_device(device: DeviceRegister):
+    device_db[device.device_id] = device.model_dump()
+    return {
+        "device_id": device.device_id,
+        "token": f"aegis_token_{device.device_id}",
+        "api_key": f"aegis_sk_{device.device_id}",
+        "status": "registered"
+    }
 
 @router.post("/register", response_model=UserResponse)
 async def register(user: UserCreate):

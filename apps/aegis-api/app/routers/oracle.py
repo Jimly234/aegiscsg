@@ -30,7 +30,7 @@ async def detect_anomaly(
     day_of_week = datetime.now().weekday()
     
     # Grid cell identification
-    grid_id = f"{location.lat:.2f}_{location.lng:.2f}"
+    grid_id = f"{lat:.2f}_{lng:.2f}"
     baseline = baseline_data.get(grid_id, {
         "mean_density": 5.0,
         "std_density": 2.0,
@@ -69,13 +69,20 @@ async def detect_anomaly(
         factors=factors if factors else ["Normal activity pattern"],
     )
 
+from pydantic import BaseModel
+
+class RiskRequest(BaseModel):
+    lat: float
+    lng: float
+
 @router.post("/risk/assess")
-async def assess_risk(location: GeoLocation):
+async def assess_risk(body: RiskRequest):
+    location = GeoLocation(lat=body.lat, lng=body.lng)
     """
     Assess geographic risk based on multiple factors.
     """
     # Simplified risk scoring
-    grid_id = f"{location.lat:.2f}_{location.lng:.2f}"
+    grid_id = f"{lat:.2f}_{lng:.2f}"
     zone = risk_zones.get(grid_id)
     
     if zone:
@@ -85,8 +92,8 @@ async def assess_risk(location: GeoLocation):
         risk_score = 0.3  # Base risk
         for z in risk_zones.values():
             # Simplified distance calculation
-            dist = abs(z.geometry["coordinates"][0][0][0] - location.lng) + \
-                   abs(z.geometry["coordinates"][0][0][1] - location.lat)
+            dist = abs(z.geometry["coordinates"][0][0][0] - lng) + \
+                   abs(z.geometry["coordinates"][0][0][1] - lat)
             if dist < 0.5:
                 risk_score = max(risk_score, z.risk_score * (1 - dist))
     

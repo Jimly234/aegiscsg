@@ -1,142 +1,65 @@
 import 'package:flutter/material.dart';
+import '../services/api_client.dart';
+import '../services/auth_service.dart';
 
 class GuardianSetupScreen extends StatefulWidget {
   const GuardianSetupScreen({super.key});
-
   @override
   State<GuardianSetupScreen> createState() => _GuardianSetupScreenState();
 }
 
 class _GuardianSetupScreenState extends State<GuardianSetupScreen> {
-  final List<Map<String, String>> _guardians = [
-    {'name': 'Dr. Ibrahim Bello', 'relationship': 'Husband', 'phone': '+234 810 123 4567'},
-    {'name': 'Sarah Abubakar', 'relationship': 'Sister', 'phone': '+234 810 234 5678'},
-  ];
+  final ApiClient _apiClient = ApiClient();
+  final AuthService _authService = AuthService();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  bool _isAdding = false;
+  final List<Map<String, String>> _guardiansList = [];
 
-  void _addGuardian() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1a1a2e),
-        title: const Text('Add Guardian'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Relationship',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Phone',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              keyboardType: TextInputType.phone,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0A6847),
-            ),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
+  @override
+  void initState() { super.initState(); _apiClient.loadStoredCredentials(); }
+
+  Future<void> _addGuardian() async {
+    if (_phoneController.text.isEmpty || _nameController.text.isEmpty) return;
+    setState(() => _isAdding = true);
+    await Future.delayed(const Duration(seconds: 1));
+    if (mounted) {
+      final name = _nameController.text;
+    final phone = _phoneController.text;
+    _guardiansList.add({'name': name, 'phone': phone});
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Guardian $name added'), backgroundColor: const Color(0xFF0A6847)));
+    setState(() {});
+      _nameController.clear(); _phoneController.clear();
+      setState(() => _isAdding = false);
+    }
   }
+
+  @override
+  void dispose() { _phoneController.dispose(); _nameController.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Guardians'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _addGuardian,
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Emergency Contacts',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'These people will be notified when you trigger an emergency alert',
-                style: TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _guardians.length,
-                  itemBuilder: (context, index) {
-                    final g = _guardians[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: const Color(0xFF0A6847).withOpacity(0.2),
-                          child: Text(
-                            g['name']![0],
-                            style: const TextStyle(color: Color(0xFF0A6847)),
-                          ),
-                        ),
-                        title: Text(g['name']!),
-                        subtitle: Text('${g['relationship']} - ${g['phone']}'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.phone, color: Colors.green, size: 20),
-                              onPressed: () {},
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                              onPressed: () {
-                                setState(() => _guardians.removeAt(index));
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addGuardian,
-        backgroundColor: const Color(0xFF0A6847),
-        child: const Icon(Icons.add),
-      ),
+      backgroundColor: const Color(0xFF0a0a0a),
+      appBar: AppBar(backgroundColor: const Color(0xFF1a1a2e), elevation: 0, title: const Text('Guardians')),
+      body: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Card(color: const Color(0xFF1a1a2e), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [
+          TextField(controller: _nameController, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Name', labelStyle: TextStyle(color: Colors.white38), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)), focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF0A6847))))),
+          const SizedBox(height: 12),
+          TextField(controller: _phoneController, keyboardType: TextInputType.phone, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: 'Phone Number', labelStyle: TextStyle(color: Colors.white38), hintText: '+234 800 000 0000', hintStyle: TextStyle(color: Colors.white12), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)), focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF0A6847))))),
+          const SizedBox(height: 16),
+          SizedBox(width: double.infinity, child: ElevatedButton(onPressed: _isAdding ? null : _addGuardian, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0A6847), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: _isAdding ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Add Guardian'))),
+        ]))),
+        const SizedBox(height: 24),
+        if (_guardiansList.isNotEmpty)
+        Card(color: const Color(0xFF1a1a2e), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('YOUR GUARDIANS', style: TextStyle(color: Colors.white38, fontSize: 11, letterSpacing: 2)),
+          const SizedBox(height: 8),
+          ...(_guardiansList.map((g) => ListTile(leading: const Icon(Icons.person, color: Color(0xFF0A6847)), title: Text(g['name']!, style: const TextStyle(color: Colors.white)), subtitle: Text(g['phone']!, style: const TextStyle(color: Colors.white38, fontSize: 12)), contentPadding: EdgeInsets.zero, dense: true))),
+        ]))),
+      const SizedBox(height: 12),
+      const Text('Your emergency contacts will be notified when you trigger an alert.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white30, fontSize: 12)),
+      ])),
     );
   }
 }

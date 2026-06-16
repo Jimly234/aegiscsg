@@ -14,7 +14,8 @@ import {
   formatRelativeTime, formatTime, priorityColor,
   statusColor, unitStatusColor, riskColor, riskLabel,
 } from '@/lib/aegis-utils';
-import { demoHourlyData, demoRegionData } from '@/lib/aegis-data';
+// Chart data derived from store alerts
+import { useMemo } from 'react';
 import type { Alert, AlertStatus, ResponseUnit } from '@/types/aegis';
 import { useNavigate } from 'react-router-dom';
 import { AegisLiveMap } from '@/components/AegisLiveMap';
@@ -112,6 +113,23 @@ function DispatchModal({ alert, onClose }: { alert: Alert; onClose: () => void }
 
 // ── Command Center ────────────────────────────────────────────
 export default function CommandCenterPage() {
+  // Derive chart data from alerts
+  const hourlyData = useMemo(() => {
+    const hours = Array(24).fill(0).map((_, i) => ({
+      hour: `${i.toString().padStart(2, '0')}:00`,
+      incidents: alerts.filter(a => new Date(a.timestamp || a.triggered_at).getHours() === i).length,
+    }));
+    return hours;
+  }, [alerts]);
+
+  const regionData = useMemo(() => {
+    const regions = ['North Central', 'North West', 'North East', 'South West', 'South East', 'South South'];
+    return regions.map(region => ({
+      region,
+      incidents: alerts.filter(a => (a.region || 'North Central') === region).length,
+    }));
+  }, [alerts]);
+
   const navigate = useNavigate();
   const user = useAegisStore((s) => s.user);
   const alerts = useAegisStore((s) => s.alerts);
@@ -267,7 +285,7 @@ export default function CommandCenterPage() {
                   <h3 className="text-sm font-semibold mb-4">Alert Activity — Today</h3>
                   <div className="w-full min-w-0 overflow-hidden" style={{ height: 200 }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={demoHourlyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                      <BarChart data={hourlyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
                         <XAxis dataKey="hour" tick={{ fill: 'hsl(215 18% 50%)', fontSize: 10 }} />
                         <YAxis tick={{ fill: 'hsl(215 18% 50%)', fontSize: 10 }} />
@@ -283,7 +301,7 @@ export default function CommandCenterPage() {
                   <h3 className="text-sm font-semibold mb-4">Alerts by Region — 30 Days</h3>
                   <div className="w-full min-w-0 overflow-hidden" style={{ height: 200 }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={demoRegionData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                      <LineChart data={regionData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
                         <XAxis dataKey="region" tick={{ fill: 'hsl(215 18% 50%)', fontSize: 8 }} />
                         <YAxis tick={{ fill: 'hsl(215 18% 50%)', fontSize: 10 }} />
