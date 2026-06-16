@@ -77,10 +77,9 @@ class RiskRequest(BaseModel):
 
 @router.post("/risk/assess")
 async def assess_risk(body: RiskRequest):
-    location = GeoLocation(lat=body.lat, lng=body.lng)
-    """
-    Assess geographic risk based on multiple factors.
-    """
+    lat = body.lat
+    lng = body.lng
+    location = GeoLocation(lat=lat, lng=lng)
     # Simplified risk scoring
     grid_id = f"{lat:.2f}_{lng:.2f}"
     zone = risk_zones.get(grid_id)
