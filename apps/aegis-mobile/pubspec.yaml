@@ -1,4 +1,4 @@
-﻿name: aegis_sentinel
+name: aegis_sentinel
 description: Aegis CSG Sentinel Mobile Application
 publish_to: 'none'
 version: 2.0.0+1
@@ -35,7 +35,7 @@ dependencies:
   pointycastle: any
   flutter_secure_storage: any
   path_provider: any
-
+  supabase: ^2.13.0
 flutter:
   uses-material-design: true
   assets:

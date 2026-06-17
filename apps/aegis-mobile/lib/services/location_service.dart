@@ -25,23 +25,10 @@ class LocationService {
         desiredAccuracy: highAccuracy
             ? LocationAccuracy.high
             : LocationAccuracy.low,
-      ).timeout(timeout);
-    } catch (e) {
+      ).timeout(timeout);    } catch (e) {
       try { return await Geolocator.getLastKnownPosition(); } catch (_) {
-      // Fallback: return mock location for emulator testing
-      return Position(
-        latitude: 10.5234,
-        longitude: 7.4356,
-        timestamp: DateTime.now(),
-        accuracy: 5.0,
-        altitude: 650.0,
-        heading: 0.0,
-        speed: 0.0,
-        speedAccuracy: 0.0,
-        altitudeAccuracy: 0.0,
-        headingAccuracy: 0.0,
-      );
-    }
+        return null;
+      }
     }
   }
 
