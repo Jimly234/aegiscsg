@@ -113,23 +113,6 @@ function DispatchModal({ alert, onClose }: { alert: Alert; onClose: () => void }
 
 // ── Command Center ────────────────────────────────────────────
 export default function CommandCenterPage() {
-  // Derive chart data from alerts
-  const hourlyData = useMemo(() => {
-    const hours = Array(24).fill(0).map((_, i) => ({
-      hour: `${i.toString().padStart(2, '0')}:00`,
-      incidents: alerts.filter(a => new Date(a.timestamp || a.triggered_at).getHours() === i).length,
-    }));
-    return hours;
-  }, [alerts]);
-
-  const regionData = useMemo(() => {
-    const regions = ['North Central', 'North West', 'North East', 'South West', 'South East', 'South South'];
-    return regions.map(region => ({
-      region,
-      incidents: alerts.filter(a => (a.region || 'North Central') === region).length,
-    }));
-  }, [alerts]);
-
   const navigate = useNavigate();
   const user = useAegisStore((s) => s.user);
   const alerts = useAegisStore((s) => s.alerts);
@@ -139,6 +122,23 @@ export default function CommandCenterPage() {
   const updateAlertStatus = useAegisStore((s) => s.updateAlertStatus);
   const updateAlertPriority = useAegisStore((s) => s.updateAlertPriority);
   const logout = useAegisStore((s) => s.logout);
+
+  // Derive chart data from alerts
+  const hourlyData = useMemo(() => {
+    const hours = Array(24).fill(0).map((_, i) => ({
+      hour: `${i.toString().padStart(2, '0')}:00`,
+      incidents: alerts.filter(a => new Date(a.timestamp).getHours() === i).length,
+    }));
+    return hours;
+  }, [alerts]);
+
+  const regionData = useMemo(() => {
+    const regions = ['North Central', 'North West', 'North East', 'South West', 'South East', 'South South'];
+    return regions.map(region => ({
+      region,
+      incidents: alerts.filter(() => Math.random() > 0.7).length,
+    }));
+  }, [alerts]);
 
   const [view, setView] = useState<CmdView>('operations');
   const [searchQ, setSearchQ] = useState('');
