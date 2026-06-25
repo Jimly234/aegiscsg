@@ -7,6 +7,9 @@ import 'package:device_info_plus/device_info_plus.dart';
 import '../services/location_service.dart';
 import '../services/api_client.dart';
 import '../services/sms_service.dart';
+import '../services/supabase_service.dart';
+import '../services/offline_queue_service.dart';
+import '../services/audio_streaming_service.dart';
 
 class EmergencyTriggerScreen extends StatefulWidget {
   const EmergencyTriggerScreen({super.key});
@@ -24,6 +27,7 @@ class _EmergencyTriggerScreenState extends State<EmergencyTriggerScreen> with Si
   final LocationService _locationService = LocationService();
   final ApiClient _apiClient = ApiClient();
   final SmsService _smsService = SmsService();
+  final AudioStreamingService _audioStreaming = AudioStreamingService();
   final Battery _battery = Battery();
   final Connectivity _connectivity = Connectivity();
   final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
@@ -35,7 +39,7 @@ class _EmergencyTriggerScreenState extends State<EmergencyTriggerScreen> with Si
   }
 
   @override
-  void dispose() { _pulseController.dispose(); super.dispose(); }
+  void dispose() { _audioStreaming.stopStreaming(); _pulseController.dispose(); super.dispose(); }
 
   void _onPanStart(DragStartDetails details) {
     if (_isSending || _alertSent) return;
@@ -63,7 +67,7 @@ class _EmergencyTriggerScreenState extends State<EmergencyTriggerScreen> with Si
   Future<void> _triggerEmergency() async {
     setState(() { _isSending = true; _statusMessage = 'Getting location...'; });
     HapticFeedback.heavyImpact();
-    if (await Vibration.hasVibrator() ?? false) Vibration.vibrate(pattern: [0, 500, 200, 500, 200, 500]);
+    if (await Vibration.hasVibrator() == true) Vibration.vibrate(pattern: [0, 500, 200, 500, 200, 500]);
     try {
       final position = await _locationService.getCurrentPosition();
       if (position == null) { setState(() { _isSending = false; _statusMessage = 'No location. Try again.'; }); return; }
@@ -75,6 +79,41 @@ class _EmergencyTriggerScreenState extends State<EmergencyTriggerScreen> with Si
       String deviceId = 'unknown';
       try { deviceId = (await _deviceInfo.androidInfo).model; } catch (_) {}
       final alertResult = await _apiClient.triggerEmergency(deviceId: deviceId, latitude: position.latitude, longitude: position.longitude, accuracy: position.accuracy, altitude: position.altitude, speed: position.speed, heading: position.heading, batteryLevel: batteryLevel, networkType: networkType);
+      // Sync alert to Supabase after successful API trigger
+      try {
+        await SupabaseService.createAlert({
+          'device_id': deviceId,
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+          'accuracy': position.accuracy,
+          'timestamp': DateTime.now().toUtc().toIso8601String(),
+          'battery_level': batteryLevel,
+          'network_type': networkType,
+          'trigger_method': 'button_hold',
+        });
+        if (alertResult != null && alertResult['id'] != null) {
+          await SupabaseService.addAlertLocation({
+            'alert_id': alertResult['id'],
+            'location': 'POINT(${position.longitude} ${position.latitude})',
+            'accuracy': position.accuracy,
+          });
+        }
+      } catch (_) {
+        await OfflineQueueService.enqueue('alert_sync', {
+          'device_id': deviceId,
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+          'accuracy': position.accuracy,
+          'timestamp': DateTime.now().toUtc().toIso8601String(),
+          'battery_level': batteryLevel,
+          'network_type': networkType,
+          'trigger_method': 'button_hold',
+        });
+      }
+      // Start audio streaming after successful alert trigger
+      if (alertResult != null && alertResult['id'] != null) {
+        _audioStreaming.startStreaming(alertResult['id'].toString());
+      }
       final smsSent = await _smsService.sendEmergencySms(latitude: position.latitude, longitude: position.longitude, timestamp: DateTime.now(), batteryLevel: batteryLevel, deviceId: deviceId);
       setState(() { _isSending = false; _alertSent = true; });
       if (mounted) {
@@ -83,7 +122,7 @@ class _EmergencyTriggerScreenState extends State<EmergencyTriggerScreen> with Si
     } catch (e) { setState(() { _isSending = false; _statusMessage = 'Error. Try again.'; }); }
   }
 
-  void _resetAlert() { setState(() { _alertSent = false; _isHolding = false; _holdProgress = 0.0; }); }
+  void _resetAlert() { _audioStreaming.stopStreaming(); setState(() { _alertSent = false; _isHolding = false; _holdProgress = 0.0; }); }
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +133,7 @@ class _EmergencyTriggerScreenState extends State<EmergencyTriggerScreen> with Si
         onPanStart: _alertSent ? null : _onPanStart, onPanEnd: _alertSent ? null : _onPanEnd,
         child: AnimatedBuilder(animation: _pulseController, builder: (context, child) {
           return Container(width: double.infinity, height: double.infinity,
-            decoration: BoxDecoration(gradient: RadialGradient(colors: [(_alertSent ? Colors.green : Colors.red).withOpacity(0.3 * _pulseController.value), Colors.black], radius: 0.8)),
+            decoration: BoxDecoration(gradient: RadialGradient(colors: [(_alertSent ? Colors.green : Colors.red).withValues(alpha: 0.3 * _pulseController.value), Colors.black], radius: 0.8)),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               if (!_alertSent) ...[
                 const Text('PRESS & HOLD', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 4)),
@@ -105,18 +144,18 @@ class _EmergencyTriggerScreenState extends State<EmergencyTriggerScreen> with Si
                 const Icon(Icons.check_circle, color: Colors.green, size: 64), const SizedBox(height: 16),
                 const Text('ALERT SENT', style: TextStyle(color: Colors.green, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 4)),
                 const SizedBox(height: 40),
-                ElevatedButton(onPressed: _resetAlert, style: ElevatedButton.styleFrom(backgroundColor: Colors.green.withOpacity(0.2)), child: const Text('SEND ANOTHER ALERT')),
+                ElevatedButton(onPressed: _resetAlert, style: ElevatedButton.styleFrom(backgroundColor: Colors.green.withValues(alpha: 0.2)), child: const Text('SEND ANOTHER ALERT')),
                 const SizedBox(height: 40),
               ],
               SizedBox(width: 200, height: 200, child: Stack(alignment: Alignment.center, children: [
-                Container(width: 200, height: 200, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: (_alertSent ? Colors.green : Colors.red).withOpacity(0.3), width: 2))),
-                Container(width: 180, height: 180, decoration: BoxDecoration(shape: BoxShape.circle, color: (_alertSent ? Colors.green : Colors.red).withOpacity(_isSending ? 0.8 : (0.2 + (_holdProgress * 0.6))), boxShadow: [BoxShadow(color: (_alertSent ? Colors.green : Colors.red).withOpacity(_holdProgress * 0.5), blurRadius: 40, spreadRadius: 10)]),
-                  child: Center(child: _isSending ? const SizedBox(width: 40, height: 40, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)) : Icon(_alertSent ? Icons.check : Icons.sos, size: 60, color: Colors.white.withOpacity(0.7 + (_holdProgress * 0.3))))),
+                Container(width: 200, height: 200, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: (_alertSent ? Colors.green : Colors.red).withValues(alpha: 0.3), width: 2))),
+                Container(width: 180, height: 180, decoration: BoxDecoration(shape: BoxShape.circle, color: (_alertSent ? Colors.green : Colors.red).withValues(alpha: _isSending ? 0.8 : (0.2 + (_holdProgress * 0.6))), boxShadow: [BoxShadow(color: (_alertSent ? Colors.green : Colors.red).withValues(alpha: _holdProgress * 0.5), blurRadius: 40, spreadRadius: 10)]),
+                  child: Center(child: _isSending ? const SizedBox(width: 40, height: 40, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)) : Icon(_alertSent ? Icons.check : Icons.sos, size: 60, color: Colors.white.withValues(alpha: 0.7 + (_holdProgress * 0.3))))),
                 if (_isHolding && !_alertSent) SizedBox(width: 200, height: 200, child: CircularProgressIndicator(value: _holdProgress, strokeWidth: 4, color: Colors.red, backgroundColor: Colors.transparent)),
               ])),
               if (!_alertSent) ...[
                 const SizedBox(height: 40),
-                Text(_isSending ? 'SENDING...' : countdownText, style: TextStyle(color: (_alertSent ? Colors.green : Colors.red).withOpacity(0.5 + _holdProgress * 0.5), fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(_isSending ? 'SENDING...' : countdownText, style: TextStyle(color: (_alertSent ? Colors.green : Colors.red).withValues(alpha: 0.5 + _holdProgress * 0.5), fontSize: 20, fontWeight: FontWeight.bold)),
               ],
             ]),
           );

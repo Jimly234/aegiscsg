@@ -7,11 +7,11 @@ import type { Alert, Guardian, ResponseUnit, RiskZone, CommunityReport, ChatMess
 export function mapAlert(row: any): Alert {
   return {
     id: row.id,
-    victimName: row.victim_name,
-    victimAge: row.victim_age,
-    victimGender: row.victim_gender,
+    victimName: row.victim_name ?? `Device ${row.device_id?.slice(0, 8) ?? 'Unknown'}`,
+    victimAge: row.victim_age ?? null,
+    victimGender: row.victim_gender ?? null,
     location: { lat: Number(row.lat), lng: Number(row.lng), accuracy: row.accuracy_meters },
-    address: row.address,
+    address: row.address ?? null,
     status: row.status,
     priority: row.priority,
     batteryLevel: row.battery_level,
@@ -33,6 +33,9 @@ export function mapAlert(row: any): Alert {
     } : undefined,
     timestamp: row.triggered_at,
     logEntries: [],
+    deviceId: row.device_id,
+    triggerMethod: row.trigger_method,
+    networkType: row.network_type,
   };
 }
 

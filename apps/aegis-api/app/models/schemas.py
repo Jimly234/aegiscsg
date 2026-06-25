@@ -51,6 +51,26 @@ class AlertCreate(AlertBase):
     device_id: str
     user_id: str
 
+class FlutterAlertCreate(BaseModel):
+    """Unified alert creation schema accepting both device-originated and victim-info fields."""
+    # Required device fields
+    device_id: str
+    location: Dict[str, Any]
+    timestamp: str = ""
+    trigger_method: str = "button_hold"
+
+    # Optional device telemetry
+    battery_level: Optional[int] = None
+    network_type: Optional[str] = None
+    signal_strength: Optional[int] = None
+    is_silent: bool = True
+
+    # Optional victim information
+    victim_name: Optional[str] = None
+    victim_age: Optional[int] = None
+    victim_gender: Optional[str] = None
+    address: Optional[str] = None
+
 class AlertResponse(AlertBase):
     id: str
     status: AlertStatus

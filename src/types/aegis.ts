@@ -41,10 +41,10 @@ export interface LogEntry {
 export interface Alert {
   id: string;
   victimName: string;
-  victimAge: number;
-  victimGender: 'M' | 'F';
+  victimAge?: number | null;
+  victimGender?: 'M' | 'F' | null;
   location: GeoLocation;
-  address: string;
+  address?: string | null;
   status: AlertStatus;
   priority: AlertPriority;
   timestamp: string;
@@ -59,6 +59,10 @@ export interface Alert {
   movementPattern?: string;
   aiAnalysis?: AIAnalysis;
   logEntries: LogEntry[];
+  // Unified schema fields for device-originated alerts
+  deviceId?: string;
+  triggerMethod?: string;
+  networkType?: string;
 }
 
 export interface Guardian {

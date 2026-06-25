@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../services/location_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,6 +12,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ApiClient _apiClient = ApiClient();
   final AuthService _authService = AuthService();
+  final LocationService _locationService = LocationService();
   bool _isLoading = true;
   Map<String, dynamic>? _riskData;
 
@@ -21,16 +23,36 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
     try {
       await _apiClient.loadStoredCredentials();
-      final risk = await _apiClient.assessRisk(latitude: 10.5234, longitude: 7.4356);
-      if (mounted) setState(() { _riskData = risk; _isLoading = false; });
+
+      // Get real GPS position
+      final position = await _locationService.getCurrentPosition();
+      if (position != null) {
+        final risk = await _apiClient.assessRisk(
+          latitude: position.latitude,
+          longitude: position.longitude,
+        );
+        if (mounted) setState(() { _riskData = risk; _isLoading = false; });
+      } else {
+        // No GPS: show unknown risk
+        if (mounted) setState(() {
+          _riskData = {'risk_score': 0.0, 'risk_level': 'Unknown'};
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _logout() async {
+    // 1. Clear persistent auth storage (FlutterSecureStorage)
     await _authService.clearAuth();
-    if (mounted) Navigator.of(context).pushReplacementNamed('/login');
+
+    // 2. Reset in-memory API credentials
+    ApiClient().resetCredentials();
+
+    // 3. Navigate to login and clear navigation stack
+    if (mounted) Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
   }
 
   Color _riskColor(double s) => s < 0.25 ? Colors.green : s < 0.5 ? Colors.orange : s < 0.75 ? Colors.deepOrange : Colors.red;
@@ -60,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 12),
         Row(children: [
           Expanded(child: _actionCard(Icons.route, 'JOURNEY', Colors.blue, () {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Journey Mode coming in Phase 2'), backgroundColor: Color(0xFF0A6847)));
+      Navigator.pushNamed(context, '/journey');
     })),
           const SizedBox(width: 12),
           Expanded(child: _actionCard(Icons.people, 'GUARDIANS', Colors.purple, () => Navigator.pushNamed(context, '/guardians'))),

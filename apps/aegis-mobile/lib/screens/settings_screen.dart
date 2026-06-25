@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/api_client.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   Future<void> _logout(BuildContext context) async {
     final confirmed = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(backgroundColor: const Color(0xFF1a1a2e), title: const Text('Logout', style: TextStyle(color: Colors.white)), content: const Text('Are you sure?', style: TextStyle(color: Colors.white70)), actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')), TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Logout', style: TextStyle(color: Colors.red)))]));
-    if (confirmed == true && context.mounted) { await AuthService().clearAuth(); await Future.delayed(const Duration(milliseconds: 500)); if (context.mounted) { Navigator.of(context).pushNamedAndRemoveUntil("/login", (route) => false); } }
+    if (confirmed == true && context.mounted) {
+      // 1. Clear persistent auth storage (FlutterSecureStorage)
+      await AuthService().clearAuth();
+
+      // 2. Reset in-memory API credentials
+      ApiClient().resetCredentials();
+
+      // 3. Navigate to login and clear navigation stack
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+    }
   }
 
   @override
@@ -17,11 +29,11 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(padding: const EdgeInsets.all(16), children: [
         Card(color: const Color(0xFF1a1a2e), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), child: Column(children: [
           ListTile(leading: const Icon(Icons.security, color: Color(0xFF0A6847)), title: const Text('Privacy Settings', style: TextStyle(color: Colors.white)), trailing: const Icon(Icons.chevron_right, color: Colors.white24), onTap: () {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Privacy: Your data is encrypted and never shared.'), backgroundColor: Color(0xFF0A6847)));
+      Navigator.pushNamed(context, '/privacy_settings');
     }),
           const Divider(color: Colors.white10, height: 1),
           ListTile(leading: const Icon(Icons.notifications, color: Colors.blue), title: const Text('Notifications', style: TextStyle(color: Colors.white)), trailing: const Icon(Icons.chevron_right, color: Colors.white24), onTap: () {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notifications: SMS alerts are enabled. Push notifications coming soon.'), backgroundColor: Color(0xFF0A6847)));
+      Navigator.pushNamed(context, '/notifications_settings');
     }),
           const Divider(color: Colors.white10, height: 1),
           ListTile(leading: const Icon(Icons.info_outline, color: Colors.white38), title: const Text('About Aegis', style: TextStyle(color: Colors.white)), subtitle: const Text('Version 2.0.0', style: TextStyle(color: Colors.white38, fontSize: 12)), trailing: const Icon(Icons.chevron_right, color: Colors.white24), onTap: () {

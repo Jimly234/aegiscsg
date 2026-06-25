@@ -27,6 +27,7 @@ dependencies:
   torch_light: any
   sensors_plus: any
   connectivity_plus: any
+  flutter_blue_plus: any
   battery_plus: any
   device_info_plus: any
   package_info_plus: any

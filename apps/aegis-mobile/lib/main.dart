@@ -10,7 +10,8 @@ import 'screens/guardian_setup_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/journey_screen.dart';
 import 'screens/post_alert_screen.dart';
-import 'services/supabase_service.dart';
+import 'screens/privacy_settings_screen.dart';
+import 'screens/notifications_settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +48,8 @@ class AegisSentinelApp extends StatelessWidget {
           final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>? ?? {};
           return PostAlertScreen(apiSuccess: args['apiSuccess'] ?? false, smsCount: args['smsCount'] ?? 0, latitude: (args['latitude'] ?? 0).toDouble(), longitude: (args['longitude'] ?? 0).toDouble());
         },
+        '/privacy_settings': (context) => const PrivacySettingsScreen(),
+        '/notifications_settings': (context) => const NotificationsSettingsScreen(),
       },
     );
   }

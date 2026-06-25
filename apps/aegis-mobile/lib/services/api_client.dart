@@ -18,6 +18,12 @@ class ApiClient {
   void setAuthToken(String token) { _deviceToken = token; }
   void setApiKey(String key) { _apiKey = key; }
 
+  /// Reset in-memory credentials on logout
+  void resetCredentials() {
+    _deviceToken = null;
+    _apiKey = null;
+  }
+
   Map<String, String> get _headers => {
     'Content-Type': 'application/json',
     if (_deviceToken != null) 'Authorization': 'Bearer $_deviceToken',

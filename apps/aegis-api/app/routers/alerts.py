@@ -3,23 +3,21 @@ from typing import List, Optional
 from datetime import datetime
 import uuid
 
-from pydantic import BaseModel
-from typing import Optional as Opt
-
-class FlutterAlertCreate(BaseModel):
-    device_id: str
-    location: dict
-    timestamp: str = ""
-    battery_level: Opt[int] = None
-    network_type: Opt[str] = None
-    signal_strength: Opt[int] = None
-    trigger_method: str = "button_hold"
-    is_silent: bool = True
-
 from app.models.schemas import (
     AlertCreate, AlertResponse, AlertStatus, AlertPriority,
-    GeoLocation, AIAnalysis, LogEntry
+    GeoLocation, AIAnalysis, LogEntry, FlutterAlertCreate
 )
+
+
+def normalize_alert_response(alert: dict, device_id: str | None) -> dict:
+    """Normalize alert response: populate victim_name from device_id if absent,
+    set optional victim fields to null."""
+    if not alert.get("victim_name") and device_id:
+        alert["victim_name"] = f"Device {device_id[:8]}"
+    alert.setdefault("victim_age", None)
+    alert.setdefault("victim_gender", None)
+    alert.setdefault("address", None)
+    return alert
 
 router = APIRouter()
 
@@ -36,20 +34,42 @@ async def create_alert(alert: FlutterAlertCreate):
         accuracy=loc.get('accuracy')
     )
     alert_id = f"ALT-{uuid.uuid4().hex[:4].upper()}"
+
+    # Build alert dict with normalization
+    alert_data = {
+        "victim_name": alert.victim_name,
+        "victim_age": alert.victim_age,
+        "victim_gender": alert.victim_gender,
+        "address": alert.address,
+    }
+    alert_data = normalize_alert_response(alert_data, alert.device_id)
+
+    # Convert signal_strength int to string for response consistency
+    signal_str = str(alert.signal_strength) if alert.signal_strength is not None else None
+
     new_alert = AlertResponse(
         id=alert_id,
-        victim_name=f"Device {alert.device_id[:8]}",
+        victim_name=alert_data["victim_name"],
+        victim_age=alert_data["victim_age"],
+        victim_gender=alert_data["victim_gender"],
+        address=alert_data["address"],
         location=geo,
         status=AlertStatus.ACTIVE,
         priority=AlertPriority.CRITICAL,
         timestamp=datetime.utcnow(),
         battery_level=alert.battery_level,
-        signal_strength=alert.signal_strength,
+        signal_strength=signal_str,
         guardians_notified=3,
         guardians_acknowledged=0,
         audio_streaming=False,
         log_entries=[
-            LogEntry(id=f"L{uuid.uuid4().hex[:4]}", timestamp=datetime.utcnow().isoformat(), message="Alert received from Sentinel device", author="System", type="system")
+            LogEntry(
+                id=f"L{uuid.uuid4().hex[:4]}",
+                timestamp=datetime.utcnow().isoformat(),
+                message="Alert received from Sentinel device",
+                author="System",
+                type="system",
+            )
         ]
     )
     alerts_db[alert_id] = new_alert
